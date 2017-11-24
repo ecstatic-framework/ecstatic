@@ -8,6 +8,7 @@ defmodule Ecstatic.Mixfile do
       elixir: "~> 1.5",
       build_embedded: Mix.env == :prod,
       start_permanent: Mix.env == :prod,
+      name: "Ecstatic",
       deps: deps(),
       package: package(),
       docs: docs()
@@ -20,7 +21,6 @@ defmodule Ecstatic.Mixfile do
 
   defp package do
     [
-      name: "Ecstatic",
       description: "An ECS (Entity-Component-System) framework in Elixir",
       licenses: ["MIT"],
       maintainers: ["Aldric Giacomoni"],
@@ -37,6 +37,8 @@ defmodule Ecstatic.Mixfile do
   end
 
   defp deps do
-    []
+    [
+      {:ex_doc, ">= 0.0.0", only: :dev}
+    ]
   end
 end
