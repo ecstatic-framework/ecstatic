@@ -9,30 +9,33 @@ defmodule Ecstatic.Mixfile do
       build_embedded: Mix.env == :prod,
       start_permanent: Mix.env == :prod,
       deps: deps(),
-      description: "",
-      licenses: ["MIT"],
-      maintainers: ["Aldric Giacomoni"],
-      links: "https://github.com/trevoke/ecstatic"
+      package: package(),
+      docs: docs()
     ]
   end
 
-  # Configuration for the OTP application
-  #
-  # Type "mix help compile.app" for more information
   def application do
-    # Specify extra applications you'll use from Erlang/Elixir
     [extra_applications: [:logger]]
   end
 
-  # Dependencies can be Hex packages:
-  #
-  #   {:my_dep, "~> 0.3.0"}
-  #
-  # Or git/path repositories:
-  #
-  #   {:my_dep, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"}
-  #
-  # Type "mix help deps" for more examples and options
+  defp package do
+    [
+      name: "Ecstatic",
+      description: "An ECS (Entity-Component-System) framework in Elixir",
+      licenses: ["MIT"],
+      maintainers: ["Aldric Giacomoni"],
+      links: %{github: "https://github.com/trevoke/ecstatic"},
+      source_url: "https://github.com/trevoke/ecstatic"
+    ]
+  end
+
+  defp docs do
+    [
+      main: "Ecstatic",
+      source_url: "https://github.com/trevoke/ecstatic"
+    ]
+  end
+
   defp deps do
     []
   end
