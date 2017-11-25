@@ -29,7 +29,7 @@ defmodule Ecstatic.Component do
   @doc "New component"
   @spec new(component_type, state) :: t
   def new(component_type, initial_state) do
-    id = UUID.uuid4(:hex)
+    id = Ecstatic.ID.new
     struct(
       __MODULE__,
       %{id: id, type: component_type, state: initial_state}

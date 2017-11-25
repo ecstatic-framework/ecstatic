@@ -34,7 +34,7 @@ defmodule Ecstatic.Entity do
     end)
   end
 
-  def id, do: UUID.uuid4(:hex)
+  def id, do: Ecstatic.ID.new
 
   @doc "Add an initialized component to an entity"
   @spec add(t, Component.t) :: t
