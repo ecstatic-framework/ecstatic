@@ -14,7 +14,7 @@ defmodule Ecstatic.Watcher do
   ] | [
     change: (C, C -> boolean())
   ] | [
-    every: {int(), :second | :seconds | :minute | :minutes | :hour | :hours}
+    every: {integer(), :second | :seconds | :minute | :minutes | :hour | :hours}
   ]
 
   @type system :: atom()
