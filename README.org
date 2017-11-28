@@ -1,0 +1,101 @@
+* Ecstatic
+
+** TODO: Add description
+
+** Installation
+
+If [available in Hex](https://hex.pm/docs/publish), the package can be installed
+by adding `ecstatic` to your list of dependencies in `mix.exs`:
+
+
+#+BEGIN_SRC elixir
+def deps do
+  [{:ecstatic, "~> 0.1.0"}]
+end
+#+END_SRC
+
+Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
+and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
+be found at [https://hexdocs.pm/ecstatic](https://hexdocs.pm/ecstatic).
+
+* Vocabulary
+Here's a list of Ecstatic words; following will be an example sentence in English where we can connect each word to something meaningful for you.
+- =Component= : a collection of properties
+- =Entity= : a collection of components
+- =Aspect= : a filter for entities, based on which components are and aren't on that entity
+- =System= : business logic; receives an entity and will do some work on it if the entity matches a given aspect.
+- =Watcher= : A hook that connects to a lifecycle event and will call a system if a particular predicate is matched.
+
+So if Zaphod is a 33-year-old alien who doesn't have tendonitis and plays tennis, then his stamina will go down but he won't hurt after the game.
+
+This could be written as (for example):
+There's an entity that has a "social component" with a name of "Zaphod", a "race component" with a name of "alien", and who does not have the "tendonitis component". When taken through the TennisGame "system", the entity's "physical component" will see its stamina reduced. A "watcher" will check for "physical components" with a stamina going down and pass those to a HealthSystem; if the entity matches the "aspect" of "has tendonitis component", it will add a "pain component" to the entity.
+* Logic
+
+** Lifecyles
+
+*** Component
+| event   | description                  | arity         |
+|---------+------------------------------+---------------|
+| created | When initialized             | fn(comp)      |
+| bound   | When attached to an entity   | fn(comp, ent) |
+| unbound | When detached from an entity | fn(comp, ent) |
+| updated | When internal values change  | fn(pre, post) |
+| deleted | When deleted                 | fn(comp)      |
+*** Entity
+| event  | description                        | arity              |
+|--------+------------------------------------+--------------------|
+| create | when initialized                   | fn(ent)            |
+| attach | When component attached            | fn(ent, comp)      |
+| update | When attached component is updated | fn(ent, pre, post) |
+| detach | When component detached            | fn(ent, comp)      |
+| delete | When deleted                       | fn(ent)            |
+
+* Code samples
+
+#+BEGIN_SRC elixir
+  defmodule Human do
+    use Ecstatic.Entity
+    def default_components: [Age, Mortal]
+  end
+
+  defmodule Age do
+    use Ecstatic.Component
+    def default_value: %{age: 1, life_expectancy: 80}
+  end
+
+  defmodule Mortal do
+    use Ecstatic.Component
+    def default_value: %{mortal: true}
+  end
+
+  defmodule AgeSystem do
+    use Ecstatic.System
+
+    def aspect: %Ecstatic.Aspect{with: [Age]}
+    def dispatch(entity) do
+      age_comp = Entity.find_component(entity, Age)
+      new_age_comp = %{age_comp | age: age_comp.age + 1}
+      [new_age_comp]
+    end
+  end
+
+  defmodule DeathOfOldAgeSystem do
+    use Ecstatic.System
+    def aspect: %Ecstatic.Aspect{with: [Age, Mortal]}
+    def dispatch(entity) do
+      age_comp = Entity.find_component(entity, Age)
+      if age_comp.age >= age_comp.life_expectancy do
+        [Dead]
+      else
+        []
+      end
+    end
+  end
+
+  use Ecstatic.Watcher
+
+  # TODO this should be wrapped nicely
+  watch_component Age, :bound, fn(comp, ent) -> comp.age > 0 end, StartAgeTick
+  watch_component Age, :updated, fn(pre, post) -> pre.age < post.age end, DeathOfOldAgeSystem
+#+END_SRC

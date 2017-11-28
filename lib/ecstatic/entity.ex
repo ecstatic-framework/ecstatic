@@ -10,6 +10,14 @@ defmodule Ecstatic.Entity do
     components: components
   }
 
+  @callback default_components() :: [ atom() ]
+
+  defmacro __using__(_options) do
+    @quote do
+      @behaviour Entity
+    end
+  end
+
   def default_components, do: []
 
   @doc "Creates a new entity"

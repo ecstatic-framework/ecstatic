@@ -12,7 +12,7 @@ defmodule Ecstatic.Component do
     id: id
   }
 
-  @callback default_value :: t
+  @callback default_value :: map()
 
   defmacro __using__(_options) do
     quote do
