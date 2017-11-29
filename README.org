@@ -76,19 +76,20 @@ There's an entity that has a "social component" with a name of "Zaphod", a "race
     def dispatch(entity) do
       age_comp = Entity.find_component(entity, Age)
       new_age_comp = %{age_comp | age: age_comp.age + 1}
-      [new_age_comp]
+      %{change: [new_age_comp]}
     end
   end
 
   defmodule DeathOfOldAgeSystem do
     use Ecstatic.System
+
     def aspect: %Ecstatic.Aspect{with: [Age, Mortal]}
     def dispatch(entity) do
       age_comp = Entity.find_component(entity, Age)
       if age_comp.age >= age_comp.life_expectancy do
-        [Dead]
+        %{new: [Dead]}
       else
-        []
+        %{}
       end
     end
   end
