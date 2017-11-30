@@ -100,3 +100,10 @@ There's an entity that has a "social component" with a name of "Zaphod", a "race
   watch_component Age, :bound, fn(comp, ent) -> comp.age > 0 end, StartAgeTick
   watch_component Age, :updated, fn(pre, post) -> pre.age < post.age end, DeathOfOldAgeSystem
 #+END_SRC
+
+* Thoughts for events
+GenStage? Broadcast Dispatcher ?
+https://hexdocs.pm/elixir/Task.html#async_stream/2 ?
+Just a queue?
+One genstage consumer per "containing entity" ? (would assume events are bound by containing entity)
+"Optional" separator

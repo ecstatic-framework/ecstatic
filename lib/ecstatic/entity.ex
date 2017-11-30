@@ -13,7 +13,7 @@ defmodule Ecstatic.Entity do
   @callback default_components() :: [ atom() ]
 
   defmacro __using__(_options) do
-    @quote do
+    quote do
       @behaviour Entity
     end
   end
