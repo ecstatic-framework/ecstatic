@@ -22,23 +22,25 @@ defmodule Ecstatic.Entity do
 
   @doc "Creates a new entity"
   @spec new(components) :: t
-  def new(components: components) when is_list(components) do
-    build(components)
+  def new(components) when is_list(components) do
+    entity = build(components ++ default_components())
+    Ecstatic.EventConsumer.start_link(entity)
+    entity
   end
-  def new(components) when is_list(components), do: build(components)
 
   @spec new(uninitialized_component) :: t
-  def new(component), do: new(components: [component | default_components() ])
+  def new(component), do: new([component])
 
   @spec new :: t
-  def new, do: new(components: default_components())
+  def new, do: new(default_components())
 
   defp build(components) do
+    # TODO deduplicate components; prefer initialized components.
     entity = %Entity{id: id()}
     Enum.reduce(components, entity, fn
-      (%Component{} = c, acc) -> Entity.add(acc, c)
-      (c, acc) when is_atom(c) -> Entity.add(acc, c.new)
-      (c, _acc) -> raise "Could not initialize, #{inspect c} is not a component."
+      (%Component{} = comp, acc) -> Entity.add(acc, comp)
+      (comp, acc) when is_atom(comp) -> Entity.add(acc, comp.new)
+      (comp, _acc) -> raise "Could not initialize, #{inspect comp} is not a component."
     end)
   end
 

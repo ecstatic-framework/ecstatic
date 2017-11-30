@@ -94,11 +94,12 @@ There's an entity that has a "social component" with a name of "Zaphod", a "race
     end
   end
 
-  use Ecstatic.Watcher
+  defmodule Watchers do
+    use Ecstatic.Watcher
 
-  # TODO this should be wrapped nicely
-  watch_component Age, :bound, fn(comp, ent) -> comp.age > 0 end, StartAgeTick
-  watch_component Age, :updated, fn(pre, post) -> pre.age < post.age end, DeathOfOldAgeSystem
+    watch_component Age, :bound, fn(comp, ent) -> comp.age > 0 end, StartAgeTick
+    watch_component Age, :updated, fn(pre, post) -> pre.age < post.age end, DeathOfOldAgeSystem
+  end
 #+END_SRC
 
 * Thoughts for events

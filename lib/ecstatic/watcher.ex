@@ -24,4 +24,28 @@ defmodule Ecstatic.Watcher do
     trigger: trigger(),
     system: atom()
   }
+
+  defmacro __using__(_options) do
+    quote do
+      import unquote(__MODULE__)
+      Module.register_attribute(__MODULE__, :watchers, accumulate: true)
+      @before_compile unquote(__MODULE__)
+    end
+  end
+  defmacro __before_compile__(_env) do
+    quote do
+      def watchers, do: @watchers
+    end
+  end
+
+  defmacro watch_component(comp, hook, callback, system) do
+    quote do
+      @watchers {
+        unquote(comp),
+        unquote(hook),
+        unquote(callback),
+        unquote(system)
+      }
+    end
+  end
 end
