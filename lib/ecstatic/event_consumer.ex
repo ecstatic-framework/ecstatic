@@ -23,19 +23,33 @@ defmodule Ecstatic.EventConsumer do
 
   # I can do [event] because I only ever ask for one.
   # event => {entity, %{changed: [], new: [], deleted: []}}
-  def handle_events([event], _from, orig_entity) do
-    Watchers.watchers
-    |> Enum.filter(%{}, fn({component, hook, callback, system}, acc) ->
-      case hook do
-        :created -> Enum.any?(event.new, &(&1 == component || (is_map(&1) == &1.type == component)))
-        :updated -> Enum.any?(event.changed, &(&1 == component || (is_map(&1) == &1.type == component)))
-        :deleted -> Enum.any?(event.deleted, &(&1 == component || (is_map(&1) == &1.type == component)))
-        _ -> false
-      end
-    end)
+  def handle_events([{entity, changes} = _event], _from, orig_entity) do
+    watchers =
+      Watchers.watchers
+      |> Enum.map(&Map.put(&1, :used_this_round, false))
+
+    filter_func = watcher_filter(entity, changes)
+
+    watchers_to_use =
+      watchers
+      |> Enum.filter(&Enum.member?(Map.get(changes, &1.hook), &1.component))
+      |> Enum.filter(&filter_func(&1))
+
     # Run through watchers; create internal loop
     # so they all have a chance to trigger, until no
     # more changes are detected
     {:noreply, [], orig_entity}
   end
+
+  def watcher_filter(entity, changes) do
+    fn(watcher) ->
+      watcher.callback(
+        entity,
+        Enum.find(
+          Map.get(changes, watcher.hook),
+          watcher.component)
+      )
+    end
+  end
+
 end

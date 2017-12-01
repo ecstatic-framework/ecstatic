@@ -33,23 +33,11 @@ There's an entity that has a "social component" with a name of "Zaphod", a "race
 * Logic
 
 ** Lifecyles
-
-*** Component
-| event   | description                  | arity         |
-|---------+------------------------------+---------------|
-| created | When initialized             | fn(comp)      |
-| bound   | When attached to an entity   | fn(comp, ent) |
-| unbound | When detached from an entity | fn(comp, ent) |
-| updated | When internal values change  | fn(pre, post) |
-| deleted | When deleted                 | fn(comp)      |
-*** Entity
-| event  | description                        | arity              |
-|--------+------------------------------------+--------------------|
-| create | when initialized                   | fn(ent)            |
-| attach | When component attached            | fn(ent, comp)      |
-| update | When attached component is updated | fn(ent, pre, post) |
-| detach | When component detached            | fn(ent, comp)      |
-| delete | When deleted                       | fn(ent)            |
+| event    | description          | arity                 |
+|----------+----------------------+-----------------------|
+| attached | attached to entity   | fn(ent, comp)         |
+| unbound  | detached from entity | fn(ent, comp)         |
+| updated  | when updated         | fn(ent, new_comp) |
 
 * Code samples
 
@@ -76,7 +64,7 @@ There's an entity that has a "social component" with a name of "Zaphod", a "race
     def dispatch(entity) do
       age_comp = Entity.find_component(entity, Age)
       new_age_comp = %{age_comp | age: age_comp.age + 1}
-      %{change: [new_age_comp]}
+      %Ecstatic.Changes{updated: [new_age_comp]}
     end
   end
 
@@ -87,9 +75,9 @@ There's an entity that has a "social component" with a name of "Zaphod", a "race
     def dispatch(entity) do
       age_comp = Entity.find_component(entity, Age)
       if age_comp.age >= age_comp.life_expectancy do
-        %{new: [Dead]}
+        %Ecstatic.Changes{attached: [Dead]}
       else
-        %{}
+        %Ecstatic.Changes{}
       end
     end
   end
