@@ -4,14 +4,17 @@ defmodule Ecstatic.System do
   defmacro __using__(_options) do
     quote do
       @behaviour Ecs.System
+      alias Ecstatic.{Aspect, Changes, Component, Entity}
 
-      @spec process(entity :: Ecstatic.Entity.t) :: { Ecstatic.Entity.t, Ecstatic.Changes.t }
+      @spec process(entity :: Entity.t) :: :ok
       def process(entity) do
-        if Ecstatic.Entity.match_aspect?(aspect(), entity) do
+        # TODO move this match_aspect? to the watcher definition?
+        event = if Entity.match_aspect?(aspect(), entity) do
           {entity, dispatch(entity)}
         else
-          {entity, %Ecstatic.Changes{}}
+          {entity, %Changes{}}
         end
+        EventQueue.push(event)
       end
 
     end

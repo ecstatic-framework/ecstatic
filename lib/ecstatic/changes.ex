@@ -5,8 +5,10 @@ defmodule Ecstatic.Changes do
     removed: [],
   ]
 
+  @type attached_component :: atom() | Ecstatic.Component.t
+
   @type t :: %Ecstatic.Changes{
-    attached: [ atom() ],
+    attached: [ attached_component ],
     updated: [ Ecstatic.Component.t ],
     removed: [ atom() ]
   }

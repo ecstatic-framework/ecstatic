@@ -1,5 +1,5 @@
 defmodule Ecstatic.Entity do
-  alias Ecstatic.{Entity, Component, Aspect}
+  alias Ecstatic.{Entity, Component, Aspect, Changes}
   defstruct [:id, components: []]
 
   @type id :: String.t
@@ -67,9 +67,28 @@ defmodule Ecstatic.Entity do
     |> Enum.member?(component)
   end
 
-  @spec find_component(t, uninitialized_component) :: Ecs.Component.t | nil
+  @spec find_component(t, uninitialized_component) :: Component.t | nil
   def find_component(entity, component) do
     Enum.find(entity.components, &(&1.type == component))
+  end
+
+  @spec apply_changes(t, Changes.t) :: t
+  def apply_changes(entity, %Changes{
+        attached: attached,
+        updated: updated,
+        removed: removed}) do
+    comps_to_attach = Enum.map(attached, fn
+      c when is_atom(c) -> c.new
+      c -> c
+    end)
+    new_comps =
+      updated
+      |> Enum.concat(entity.components)
+      |> Enum.uniq_by(&(&1.id))
+      |> Enum.concat(comps_to_attach)
+      |> Enum.uniq_by(&(&1.type))
+      |> Enum.reject(&Enum.member?(removed, &1.type))
+    %{entity | components: new_comps}
   end
 
 end

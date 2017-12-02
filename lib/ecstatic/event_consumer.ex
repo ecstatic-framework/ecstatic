@@ -1,6 +1,8 @@
 defmodule Ecstatic.EventConsumer do
   use GenStage
 
+  alias Ecstatic.{Entity, Watchers}
+
   def start_link(entity) do
     GenStage.start_link(__MODULE__, entity)
   end
@@ -12,7 +14,7 @@ defmodule Ecstatic.EventConsumer do
       subscribe_to: [
         {
           Ecstatic.EventProducer,
-          selector: fn({event_entity, event_comp}) ->
+          selector: fn({event_entity, _event_comp}) ->
             event_entity.id == entity.id
           end,
           max_demand: 1,
@@ -33,7 +35,13 @@ defmodule Ecstatic.EventConsumer do
     watchers_to_use =
       watchers
       |> Enum.filter(&Enum.member?(Map.get(changes, &1.hook), &1.component))
-      |> Enum.filter(&filter_func(&1))
+      |> Enum.filter(filter_func/1)
+
+    new_entity = Entity.apply_changes(entity, changes)
+
+    Enum.each(watchers_to_use, fn(w) ->
+      w.system.process(new_entity)
+    end)
 
     # Run through watchers; create internal loop
     # so they all have a chance to trigger, until no
