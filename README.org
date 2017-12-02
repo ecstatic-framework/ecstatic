@@ -96,3 +96,9 @@ https://hexdocs.pm/elixir/Task.html#async_stream/2 ?
 Just a queue?
 One genstage consumer per "containing entity" ? (would assume events are bound by containing entity)
 "Optional" separator
+* so, like, events.
+*something* outside ECS can trigger an event that goes in the queue.
+Or maybe the watchers trigger systems and systems push events into the queue.
+=Process.send_after(EventQueue, {:push {:think, entity}}, 4000)=
+
+each entity gets its own consumer, only cares about internal messages to itself.
