@@ -1,9 +1,9 @@
 defmodule Ecstatic.EventQueue do
   use GenServer
 
-  def start_link, do: GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
+  def start_link(args \\ %{}), do: GenServer.start_link(__MODULE__, args, name: __MODULE__)
 
-  def init do
+  def init(args) do
     queue = :queue.new
     {:ok, %{queue: queue}}
   end
@@ -19,6 +19,6 @@ defmodule Ecstatic.EventQueue do
   end
 
   def handle_call({:push, event}, _from, %{queue: queue} = state) do
-    {:reply, :ok, %{state | queue: :queue.in(queue, event)}}
+    {:reply, :ok, %{state | queue: :queue.in(event, queue)}}
   end
 end

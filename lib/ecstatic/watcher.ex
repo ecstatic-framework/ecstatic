@@ -39,12 +39,11 @@ defmodule Ecstatic.Watcher do
   end
 
   defmacro watch_component(comp, hook, callback, system) do
-    x = Macro.escape(callback)
     quote do
       @watchers %{
         component: unquote(comp),
         hook: unquote(hook),
-        callback: unquote(x),
+        callback: callback,
         system: unquote(system)
       }
     end

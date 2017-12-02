@@ -1,5 +1,5 @@
 defmodule Ecstatic.Entity do
-  alias Ecstatic.{Entity, Component, Aspect, Changes}
+  alias Ecstatic.{Entity, Component, Aspect, Changes, Store}
   defstruct [:id, components: []]
 
   @type id :: String.t
@@ -37,19 +37,25 @@ defmodule Ecstatic.Entity do
   defp build(components) do
     # TODO deduplicate components; prefer initialized components.
     entity = %Entity{id: id()}
-    Enum.reduce(components, entity, fn
-      (%Component{} = comp, acc) -> Entity.add(acc, comp)
-      (comp, acc) when is_atom(comp) -> Entity.add(acc, comp.new)
-      (comp, _acc) -> raise "Could not initialize, #{inspect comp} is not a component."
-    end)
+    Store.Ets.save_entity(entity)
+    Ecstatic.EventQueue.push({entity, %Ecstatic.Changes{attached: components}})
+    entity
+    # Enum.reduce(components, entity, fn
+    #   (%Component{} = comp, acc) -> Entity.add(acc, comp)
+    #   (comp, acc) when is_atom(comp) -> Entity.add(acc, comp.new)
+    #   (comp, _acc) -> raise "Could not initialize, #{inspect comp} is not a component."
+    # end)
   end
 
   def id, do: Ecstatic.ID.new
 
   @doc "Add an initialized component to an entity"
   @spec add(t, Component.t) :: t
-  def add(%Entity{components: components} = entity, %Component{} = component) do
-    %{entity | components: [component | components]}
+  def add(%Entity{} = entity, %Component{} = component) do
+    Ecstatic.EventQueue.push({entity, %Ecstatic.Changes{attached: [component]}})
+    # new_entity = %{entity | components: [component | components]}
+    # Store.Ets.save_entity(new_entity)
+    entity
   end
 
   @doc "Checks if an entity matches an aspect"
@@ -88,7 +94,8 @@ defmodule Ecstatic.Entity do
       |> Enum.concat(comps_to_attach)
       |> Enum.uniq_by(&(&1.type))
       |> Enum.reject(&Enum.member?(removed, &1.type))
-    %{entity | components: new_comps}
+    new_entity = %{entity | components: new_comps}
+    Store.Ets.save_entity(new_entity)
   end
 
 end

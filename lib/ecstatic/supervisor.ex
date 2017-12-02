@@ -7,6 +7,7 @@ defmodule Ecstatic.Supervisor do
 
   def init(_arg) do
     children = [
+      {Ecstatic.Store.Ets, []},
       {Ecstatic.EventQueue, []},
       # producer last
       {Ecstatic.EventProducer, []}

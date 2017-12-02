@@ -1,7 +1,8 @@
 defmodule Ecstatic.EventProducer do
+  alias Ecstatic.EventQueue
   use GenStage
 
-  def start_link() do
+  def start_link(args \\ %{}) do
     GenStage.start_link(__MODULE__, EventQueue, name: __MODULE__)
   end
 

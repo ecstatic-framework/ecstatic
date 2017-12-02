@@ -10,7 +10,7 @@ defmodule Ecstatic.EventConsumer do
   def init(entity) do
     {
       :consumer,
-      nil,
+      :ok,
       subscribe_to: [
         {
           Ecstatic.EventProducer,
@@ -18,14 +18,14 @@ defmodule Ecstatic.EventConsumer do
             event_entity.id == entity.id
           end,
           max_demand: 1,
-          min_demand: 1
+          min_demand: 0
         }]
     }
   end
 
   # I can do [event] because I only ever ask for one.
   # event => {entity, %{changed: [], new: [], deleted: []}}
-  def handle_events([{entity, changes} = _event], _from, nil) do
+  def handle_events([{entity, changes} = _event], _from, :ok) do
     watchers =
       Watchers.watchers
       |> Enum.map(&Map.put(&1, :used_this_round, false))
@@ -34,19 +34,18 @@ defmodule Ecstatic.EventConsumer do
 
     watchers_to_use =
       watchers
+      |> IO.inspect
       |> Enum.filter(&Enum.member?(Map.get(changes, &1.hook), &1.component))
       |> Enum.filter(filter_func/1)
 
     new_entity = Entity.apply_changes(entity, changes)
+    #Ecstatic.Store.Ets.save_entity(new_entity)
 
     Enum.each(watchers_to_use, fn(w) ->
       w.system.process(new_entity)
     end)
 
-    # Run through watchers; create internal loop
-    # so they all have a chance to trigger, until no
-    # more changes are detected
-    {:noreply, [], nil}
+    {:noreply, [], :ok}
   end
 
   def watcher_filter(entity, changes) do
