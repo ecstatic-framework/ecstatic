@@ -1,15 +1,17 @@
 defmodule Ecstatic.Watcher do
   defmacro __using__(_options) do
+      Module.register_attribute(__CALLER__.module, :watchers, [accumulate: true])
+
     quote do
       import unquote(__MODULE__)
-      Module.register_attribute(__MODULE__, :watchers, [accumulate: true])
       @before_compile unquote(__MODULE__)
     end
   end
   defmacro __before_compile__(env) do
+    x = Module.get_attribute(env.module, :watchers)
     quote location: :keep do
       def watchers do
-        @watchers
+        unquote(x)
       end
     end
   end
@@ -23,8 +25,7 @@ defmodule Ecstatic.Watcher do
         system: unquote(system)
       }
     end
-    quote location: :keep do
-      @watchers unquote(map)
-    end
+    Module.put_attribute(__CALLER__.module, :watchers, map)
+    :ok
   end
 end
