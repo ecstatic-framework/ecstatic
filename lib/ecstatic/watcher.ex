@@ -34,34 +34,33 @@ defmodule Ecstatic.Watcher do
     end
   end
   defmacro __before_compile__(env) do
-    x = Enum.map(
-      Module.get_attribute(env.module, :watchers),
-      fn(watcher) ->
-        Map.update!(
-          watcher, :callback,
-          fn(callback) ->
-            IO.inspect(quote do unquote(callback) end)
-          end)
-    end)
-    Module.put_attribute(
-      env.module,
-      :watchers,
-      x)
-    quote do
-      def watchers, do: @watchers
+    watchers = Module.delete_attribute(env.module, :watchers)
+
+    foo =
+      watchers
+      |> Enum.map(fn(watcher) -> Map.update!(watcher, :callback, &(Code.eval_quoted(&1) |> elem(0))) end)
+
+    quote location: :keep do
+      def watchers do
+        unquote(foo |> IO.inspect)
+      end
     end
   end
 
   defmacro watch_component(comp, hook, callback, system) do
     x = Macro.escape(callback)
+    map = quote do %{
+      component: unquote(comp),
+      hook: unquote(hook),
+      callback: unquote(x),
+      system: unquote(system)
+    }
+    end
+    module = __CALLER__.module
     quote location: :keep do
-      Module.put_attribute(__MODULE__, :watchers, [
-            %{
-              component: unquote(comp),
-              hook: unquote(hook),
-              callback: unquote(x),
-              system: unquote(system)
-            } | Module.get_attribute(__MODULE__, :watchers)])
+      Module.put_attribute(unquote(module), :watchers, [
+            unquote(map) | Module.get_attribute(unquote(module), :watchers)
+          ])
     end
   end
 end
