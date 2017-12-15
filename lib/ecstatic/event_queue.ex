@@ -3,7 +3,7 @@ defmodule Ecstatic.EventQueue do
 
   def start_link(args \\ %{}), do: GenServer.start_link(__MODULE__, args, name: __MODULE__)
 
-  def init(args) do
+  def init(_args) do
     queue = :queue.new
     {:ok, %{queue: queue}}
   end
