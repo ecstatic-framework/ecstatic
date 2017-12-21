@@ -32,11 +32,12 @@ defmodule Ecstatic.EventConsumer do
 
     filter_func = watcher_filter(entity, changes)
 
+    IO.inspect changes
+
     watchers_to_use =
       watchers
-      |> IO.inspect
       |> Enum.filter(&Enum.member?(Map.get(changes, &1.hook), &1.component))
-      |> Enum.filter(filter_func/1)
+      |> Enum.filter(filter_func)
 
     new_entity = Entity.apply_changes(entity, changes)
     #Ecstatic.Store.Ets.save_entity(new_entity)
