@@ -1,7 +1,7 @@
 defmodule Ecstatic.EventConsumer do
   use GenStage
 
-  alias Ecstatic.{Entity, Watchers}
+  alias Ecstatic.Entity
 
   def start_link(entity) do
     GenStage.start_link(__MODULE__, entity)
@@ -10,7 +10,7 @@ defmodule Ecstatic.EventConsumer do
   def init(entity) do
     {
       :consumer,
-      :ok,
+      %{watchers: Application.get_env(:ecstatic, :watchers).()},
       subscribe_to: [
         {
           Ecstatic.EventProducer,
@@ -25,19 +25,14 @@ defmodule Ecstatic.EventConsumer do
 
   # I can do [event] because I only ever ask for one.
   # event => {entity, %{changed: [], new: [], deleted: []}}
-  def handle_events([{entity, changes} = _event], _from, :ok) do
-    watchers =
-      Watchers.watchers
-      |> Enum.map(&Map.put(&1, :used_this_round, false))
-
-    filter_func = watcher_filter(entity, changes)
-
-    IO.inspect changes
+  def handle_events([{entity, changes} = _event], _from, %{watchers: watchers} = state) do
+    watcher_should_trigger = watcher_should_trigger?(entity, changes)
+    change_contains_component = change_contains_component?(changes)
 
     watchers_to_use =
       watchers
-      |> Enum.filter(&Enum.member?(Map.get(changes, &1.hook), &1.component))
-      |> Enum.filter(filter_func)
+      |> Enum.filter(change_contains_component)
+      |> Enum.filter(watcher_should_trigger)
 
     new_entity = Entity.apply_changes(entity, changes)
     #Ecstatic.Store.Ets.save_entity(new_entity)
@@ -46,16 +41,25 @@ defmodule Ecstatic.EventConsumer do
       w.system.process(new_entity)
     end)
 
-    {:noreply, [], :ok}
+    {:noreply, [], state}
   end
 
-  def watcher_filter(entity, changes) do
+  def change_contains_component?(changes) do
     fn(watcher) ->
-      watcher.callback(
+      changes
+      |> Map.get(watcher.hook)
+      |> Enum.map(&(&1.type))
+      |> Enum.member?(watcher.component)
+    end
+  end
+
+  def watcher_should_trigger?(entity, changes) do
+    fn(watcher) ->
+      watcher.callback.(
         entity,
         Enum.find(
           Map.get(changes, watcher.hook),
-          watcher.component)
+          fn(component) -> watcher.component == component.type end)
       )
     end
   end

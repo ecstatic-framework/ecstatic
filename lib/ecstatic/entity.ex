@@ -19,18 +19,16 @@ defmodule Ecstatic.Entity do
 
   defmacro __using__(_options) do
     quote location: :keep do
+      Module.register_attribute(__MODULE__, :default_components, [])
       import unquote(__MODULE__)
       @before_compile unquote(__MODULE__)
-#      @behaviour Entity
     end
   end
 
   defmacro __before_compile__(env) do
-    quote do
+    quote location: :keep do
       @default_components @default_components || []
       def new(components \\ []) do
-        IO.inspect components
-        IO.inspect @default_components
         Ecstatic.Entity.new(components ++ @default_components)
       end
     end
@@ -49,7 +47,15 @@ defmodule Ecstatic.Entity do
     entity = %Entity{id: id()}
     Store.Ets.save_entity(entity)
 
-    EventQueue.push({entity, %Changes{attached: components}})
+    initialized_components = Enum.map(
+      components,
+      fn
+        %Component{} = component -> component
+        component when is_atom(component) -> component.new
+      end
+    )
+
+    EventQueue.push({entity, %Changes{attached: initialized_components}})
 
     # Enum.reduce(components, entity, fn
     #   (%Component{} = comp, acc) -> Entity.add(acc, comp)
