@@ -85,8 +85,8 @@ There's an entity that has a "social component" with a name of "Zaphod", a "race
   defmodule Watchers do
     use Ecstatic.Watcher
 
-    watch_component Age, :bound, fn(comp, ent) -> comp.age > 0 end, StartAgeTick
-    watch_component Age, :updated, fn(pre, post) -> pre.age < post.age end, DeathOfOldAgeSystem
+    watch_component Age, run: AgeSystem, every: 6_000
+    watch_component Age, run: DeathOfOldAgeSystem, when: fn(_pre, post) -> post.age > post.life_expectancy end
   end
 #+END_SRC
 

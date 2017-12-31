@@ -1,0 +1,57 @@
+* Design
+#+BEGIN_SRC elixir
+  defmodule Dwarf do
+    use Ecstatic.Entity
+    @default_components [Age, Health.new(%{points: 20})]
+  end
+
+  defmodule Health do
+    use Ecstatic.Component
+    @default_values %{points: 10}
+  end
+
+  defmodule Poison do
+    use Ecstatic.Component
+    @default_values %{health_loss: 2}
+  end
+
+  defmodule Age do
+    use Ecstatic.Component
+    @default_values %{points: 1}
+  end
+
+  defmodule AgingSpell do
+    use Ecstatic.Component
+    @default_values %{modifier: 1.2}
+  end
+
+  defmodule Poisoned do
+    use Ecstatic.Aspect
+    @with [Health, Poison]
+    @without [ImmuneToPoison]
+  end
+
+  defmodule PoisonSystem do
+    use Ecstatic.System
+    aspect Poisoned
+    def process(entity) do
+      health = Entity.find_component(entity, Health)
+      %Ecstatic.Changeset{changed: [%{health | points: health.points - 1}]}
+    end
+  end
+
+  defmodule Watchers do
+    use Ecstatic.Watchers
+
+    watch Poison do
+      run PoisonSystem, every: 6, :seconds
+    end
+
+    watch Health do
+      run PanicSystem, when: fn(pre, post) -> (pre.points - post.points) > 30 end
+      run BleedingSystem, when: fn(_pre, post) -> post.points == 0 end
+      run DeathSystem, when: fn(_pre, post) -> post.points == -10 end
+    end
+
+  end
+#+END_SRC

@@ -1,28 +1,38 @@
 defmodule Ecstatic.EventProducer do
-  alias Ecstatic.EventQueue
+  alias Ecstatic.EventSource
   use GenStage
 
   def start_link(_args \\ %{}) do
-    GenStage.start_link(__MODULE__, EventQueue, name: __MODULE__)
+    GenStage.start_link(__MODULE__, :ok, name: __MODULE__)
   end
 
-  def init(event_source) do
-    {:producer, %{source: event_source, demand: 0}, dispatcher: GenStage.BroadcastDispatcher}
+  def init(:ok) do
+    {
+      :producer_consumer,
+      %{demand: 0, events: []},
+      dispatcher: GenStage.BroadcastDispatcher,
+      subscribe_to: [EventSource]
+    }
   end
 
   def handle_demand(demand, state) when demand > 0 do
+    total_demand = demand + state.demand
     {to_produce, new_state} = fetch(demand + state.demand, state)
-    {:noreply, Enum.reverse(to_produce), new_state}
+    {:noreply, to_produce, new_state}
+  end
+
+  def handle_events(events, _from, state)do
+    {:noreply, events, state}
   end
 
   defp fetch(demand, state) do
-    fetch_aux(demand, state, [])
+    {events_to_produce, events_left} = Enum.split(state.events, demand)
+    remaining_demand = demand - length(events_to_produce)
+    new_state =
+      state
+      |> Map.put(:events, events_left)
+      |> Map.put(:demand, remaining_demand)
+    {events_to_produce, new_state}
   end
-  defp fetch_aux(0, state, acc), do: {acc, %{state | demand: 0}}
-  defp fetch_aux(demand, state, acc) do
-    case state.source.shift do
-      :no_events -> {acc, %{state | demand: demand}}
-      event -> fetch_aux(demand - 1, state, [event | acc])
-    end
-  end
+
 end

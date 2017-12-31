@@ -1,7 +1,7 @@
 defmodule Ecstatic.Entity do
   alias Ecstatic.{
     Entity,
-    EventQueue,
+    EventSource,
     Component,
     Aspect,
     Changes,
@@ -55,7 +55,7 @@ defmodule Ecstatic.Entity do
       end
     )
 
-    EventQueue.push({entity, %Changes{attached: initialized_components}})
+    EventSource.push({entity, %Changes{attached: initialized_components}})
 
     # Enum.reduce(components, entity, fn
     #   (%Component{} = comp, acc) -> Entity.add(acc, comp)
@@ -70,7 +70,7 @@ defmodule Ecstatic.Entity do
   @doc "Add an initialized component to an entity"
   @spec add(t, Component.t) :: t
   def add(%Entity{} = entity, %Component{} = component) do
-    EventQueue.push({entity, %Ecstatic.Changes{attached: [component]}})
+    EventSource.push({entity, %Ecstatic.Changes{attached: [component]}})
     entity
   end
 

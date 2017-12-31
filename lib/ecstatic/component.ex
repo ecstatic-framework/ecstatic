@@ -41,4 +41,6 @@ defmodule Ecstatic.Component do
       %{id: id, type: component_type, state: initial_state}
     )
   end
+
+  # TODO implement a "change" API to fix abstraction leak in systems
 end

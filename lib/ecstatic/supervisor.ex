@@ -8,8 +8,7 @@ defmodule Ecstatic.Supervisor do
   def init(_arg) do
     children = [
       {Ecstatic.Store.Ets, []},
-      {Ecstatic.EventQueue, []},
-      # producer last
+      {Ecstatic.EventSource, []},
       {Ecstatic.EventProducer, []}
     ]
     Supervisor.init(children, strategy: :one_for_one)
