@@ -64,19 +64,4 @@ defmodule Ecstatic.Watcher do
       @watchers unquote(Macro.escape(map))
     end
   end
-
-  defmacro watch_component(comp, hook, callback, system) do
-    map = quote location: :keep do
-      %{
-        component: unquote(comp),
-        hook: unquote(hook),
-        callback: unquote(callback),
-        system: unquote(system)
-      }
-    end
-    quote location: :keep do
-      @watchers unquote(Macro.escape(map))
-    end
-  end
-
 end
