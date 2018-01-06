@@ -1,4 +1,5 @@
 defmodule Ecstatic.EventConsumer do
+  @moduledoc false
   use GenStage
 
   alias Ecstatic.Entity

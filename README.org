@@ -90,3 +90,4 @@ There's an entity that has a "social component" with a name of "Zaphod", a "race
 4. Do we replace the default components when initializing an entity? Do I provide an API for replacing and an API for merging the passed in components and the default components?
 5. The tick should send an event to the unified log, it shouldn't just trigger a system. (wait, is this true? It would be if I did command-sourcing, buuuuuut?)
 6. Spend some time with the Commander library and seeing if it's a good fit for what I'm doing
+7. Streamline API; if all changes come through Changesets, then =Entity.add_component/2= doesn't make sense unless it returns a Changeset.

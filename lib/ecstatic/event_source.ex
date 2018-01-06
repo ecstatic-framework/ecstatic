@@ -1,4 +1,5 @@
 defmodule Ecstatic.EventSource do
+  @moduledoc false
   use GenStage
 
   def start_link(args \\ %{}), do: GenStage.start_link(__MODULE__, args, name: __MODULE__)

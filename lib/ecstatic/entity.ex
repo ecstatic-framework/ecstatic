@@ -65,8 +65,6 @@ defmodule Ecstatic.Entity do
     %{entity | components: components}
   end
 
-  def id, do: Ecstatic.ID.new
-
   @doc "Add an initialized component to an entity"
   @spec add(t, Component.t) :: t
   def add(%Entity{} = entity, %Component{} = component) do
@@ -113,5 +111,7 @@ defmodule Ecstatic.Entity do
     Store.Ets.save_entity(new_entity)
     new_entity
   end
+
+  defp id, do: Ecstatic.ID.new
 
 end

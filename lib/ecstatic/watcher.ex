@@ -1,4 +1,6 @@
 defmodule Ecstatic.Watcher do
+
+  @doc false
   defmacro __using__(_options) do
     quote location: :keep do
       Module.register_attribute(__MODULE__, :watchers, [accumulate: true])
@@ -7,6 +9,7 @@ defmodule Ecstatic.Watcher do
     end
   end
 
+  @doc false
   defmacro __before_compile__(env) do
     x = Module.get_attribute(env.module, :watchers)
     quote location: :keep do
@@ -15,6 +18,7 @@ defmodule Ecstatic.Watcher do
       end
     end
   end
+
 
   defmacro watch_component(comp, run: system, every: milliseconds) do
     map = quote location: :keep do

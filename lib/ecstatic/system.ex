@@ -2,6 +2,8 @@ defmodule Ecstatic.System do
   alias Ecstatic.{Aspect, Changes, Entity}
   @callback aspect() :: Aspect.t
   @callback dispatch(entity :: Entity.t) :: Changes.t
+
+  @doc false
   defmacro __using__(_options) do
     quote location: :keep do
       @behaviour Ecstatic.System

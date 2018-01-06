@@ -1,4 +1,5 @@
 defmodule Ecstatic.EventProducer do
+  @moduledoc false
   alias Ecstatic.EventSource
   use GenStage
 
