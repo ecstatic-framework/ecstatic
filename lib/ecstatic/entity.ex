@@ -26,7 +26,7 @@ defmodule Ecstatic.Entity do
     end
   end
 
-  defmacro __before_compile__(env) do
+  defmacro __before_compile__(_env) do
     quote location: :keep do
       @default_components @default_components || []
       def new(components \\ []) do
@@ -38,32 +38,19 @@ defmodule Ecstatic.Entity do
   @doc "Creates a new entity"
   @spec new(components) :: t
   def new(components) when is_list(components) do
-    entity = build(components)
+    entity = %Entity{id: id()}
     Ecstatic.EventConsumer.start_link(entity)
-    entity
+    build(entity, components)
+    Store.Ets.save_entity(entity)
   end
 
-  defp build(components) do
-    # TODO deduplicate components; prefer initialized components.
-    entity = %Entity{id: id()}
-    Store.Ets.save_entity(entity)
+  defp build(entity, components) do
+    changes = %Changes{attached: components}
 
-    initialized_components =
-      Enum.map(
-        components,
-        fn
-          %Component{} = component -> component
-          component when is_atom(component) -> component.new
-        end
-      )
+    initialized_components = new_list_of_components(entity, changes)
 
     EventSource.push({entity, %Changes{attached: initialized_components}})
 
-    # Enum.reduce(components, entity, fn
-    #   (%Component{} = comp, acc) -> Entity.add(acc, comp)
-    #   (comp, acc) when is_atom(comp) -> Entity.add(acc, comp.new)
-    #   (comp, _acc) -> raise "Could not initialize, #{inspect comp} is not a component."
-    # end)
     %{entity | components: components}
   end
 
@@ -95,14 +82,24 @@ defmodule Ecstatic.Entity do
   end
 
   @spec apply_changes(t, Changes.t()) :: t
-  def apply_changes(
-        entity,
-        %Changes{attached: attached, updated: updated, removed: removed}
-      ) do
+  def apply_changes(entity, changes) do
+    new_comps = new_list_of_components(entity, changes)
+
+    new_entity = %{entity | components: new_comps}
+    Store.Ets.save_entity(new_entity)
+    new_entity
+  end
+
+  defp id, do: Ecstatic.ID.new()
+
+  defp new_list_of_components(
+         entity,
+         %Changes{attached: attached, updated: updated, removed: removed}
+       ) do
     comps_to_attach =
       Enum.map(attached, fn
+        %Component{} = c -> c
         c when is_atom(c) -> c.new
-        c -> c
       end)
 
     new_comps =
@@ -112,11 +109,5 @@ defmodule Ecstatic.Entity do
       |> Enum.concat(comps_to_attach)
       |> Enum.uniq_by(& &1.type)
       |> Enum.reject(&Enum.member?(removed, &1.type))
-
-    new_entity = %{entity | components: new_comps}
-    Store.Ets.save_entity(new_entity)
-    new_entity
   end
-
-  defp id, do: Ecstatic.ID.new()
 end
