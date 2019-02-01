@@ -2,39 +2,39 @@
 #+BEGIN_SRC elixir
   defmodule Dwarf do
     use Ecstatic.Entity
-    @default_components [Age, Health.new(%{points: 20})]
+    default_components [Age, Health.new(%{health: 20})]
   end
 
   defmodule Health do
     use Ecstatic.Component
-    @default_values %{points: 10}
+    default_state %{health: 10}
   end
 
   defmodule Poison do
     use Ecstatic.Component
-    @default_values %{health_loss: 2}
+    default_state %{health_loss: 2}
   end
 
   defmodule Age do
     use Ecstatic.Component
-    @default_values %{points: 1}
+    default_state %{age: 1}
   end
 
   defmodule AgingSpell do
     use Ecstatic.Component
-    @default_values %{modifier: 1.2}
+    default_state %{modifier: 1.2}
   end
 
   defmodule Poisoned do
     use Ecstatic.Aspect
-    @with [Health, Poison]
-    @without [ImmuneToPoison]
+    entity_with [Health, Poison]
+    entity_without [ImmuneToPoison]
   end
 
   defmodule PoisonSystem do
     use Ecstatic.System
     aspect Poisoned
-    def process(entity) do
+    def dispatch(entity) do
       health = Entity.find_component(entity, Health)
       %Ecstatic.Changeset{changed: [%{health | points: health.points - 1}]}
     end
@@ -55,3 +55,14 @@
 
   end
 #+END_SRC
+* In words
+A valid change to an entity is pushed to the queue (by a producer).
+All entities (consumers) that care about this change receive the change and the entity to which the change applies.
+Entities process their changes through the relevant systems, then push out whatever changes may have been generated as a new event to the queue.
+
+So the player types "west": this is gathered by the input processor and becomes a produced event (changed: location component). It gets consumed by the entity, which calls the system for location component being changed, which actually applies the change. No new change is produced.
+The player needs to know this change got applied.
+So.. The system applying the change also notifies observers of the entity?
+In this case, "you move west"?
+If Ι want to "arrive from the east" as well, then the system may send multiple messages - that does seem like it belongs to the system.
+So.. I think some systems may want to know what the change was... And we need to summon the system before the change is applied so we have both pre and post states

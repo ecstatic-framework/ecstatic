@@ -12,7 +12,7 @@ defmodule Ecstatic.Supervisor do
       {Ecstatic.EventSource, []},
       {Ecstatic.EventProducer, []}
     ]
+
     Supervisor.init(children, strategy: :one_for_one)
   end
-
 end

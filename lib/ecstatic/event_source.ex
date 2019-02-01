@@ -5,7 +5,7 @@ defmodule Ecstatic.EventSource do
   def start_link(args \\ %{}), do: GenStage.start_link(__MODULE__, args, name: __MODULE__)
 
   def init(_args) do
-    queue = :queue.new
+    queue = :queue.new()
     {:producer, %{queue: queue, demand: 0}, dispatcher: GenStage.BroadcastDispatcher}
   end
 
@@ -25,7 +25,9 @@ defmodule Ecstatic.EventSource do
   defp fetch(demand, state) do
     fetch_aux(demand, state, [])
   end
+
   defp fetch_aux(0, state, acc), do: {acc, %{state | demand: 0}}
+
   defp fetch_aux(demand, state, acc) do
     case shift(state.queue) do
       :no_events -> {acc, %{state | demand: demand}}
@@ -35,7 +37,7 @@ defmodule Ecstatic.EventSource do
 
   defp shift(queue) do
     case :queue.out(queue) do
-      {:empty, new_queue} -> :no_events
+      {:empty, _new_queue} -> :no_events
       {{:value, event}, new_queue} -> {event, new_queue}
     end
   end
