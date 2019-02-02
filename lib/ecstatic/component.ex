@@ -14,7 +14,7 @@ defmodule Ecstatic.Component do
 
   defmacro __using__(_options) do
     quote location: :keep do
-      Module.register_attribute(__MODULE__, :default_value, [])
+      Module.register_attribute(__MODULE__, :default_state, [])
       import unquote(__MODULE__)
       @before_compile unquote(__MODULE__)
     end
@@ -22,11 +22,11 @@ defmodule Ecstatic.Component do
 
   defmacro __before_compile__(_env) do
     quote location: :keep do
-      @default_value @default_value || %{}
+      @default_state @default_state || %{}
       def new(initial_state \\ %{}) do
         Component.new(
           __MODULE__,
-          Map.merge(@default_value, initial_state)
+          Map.merge(@default_state, initial_state)
         )
       end
     end
