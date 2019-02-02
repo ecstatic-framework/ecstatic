@@ -40,7 +40,11 @@ defmodule Ecstatic.Entity do
   def new(components) when is_list(components) do
     entity = %Entity{id: id()}
     Ecstatic.EventConsumer.start_link(entity)
-    build(entity, components)
+    {init, non_init} = components = Enum.split_with(components, fn
+      %Component{} -> true
+      _ -> false
+    end)
+    build(entity, Enum.concat(init, non_init))
     Store.Ets.save_entity(entity)
   end
 
