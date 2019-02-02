@@ -40,7 +40,8 @@ defmodule Ecstatic.Mixfile do
     [
       {:ex_doc, ">= 0.0.0", only: :dev},
       {:uuid, "~> 1.1"},
-      {:gen_stage, "~> 0.12.2"}
+      {:gen_stage, "~> 0.12.2"},
+      {:dialyxir, "~> 1.0-pre4", only: [:dev], runtime: false}
     ]
   end
 end
