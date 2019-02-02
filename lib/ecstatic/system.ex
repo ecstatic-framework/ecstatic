@@ -18,18 +18,18 @@ defmodule Ecstatic.System do
 
       @spec process(entity :: Entity.t(), nil) :: event_push()
       def process(entity, nil) do
-        fun = fn -> dispatch(entity) end
-        do_process(function)
+        function = fn -> dispatch(entity) end
+        do_process(entity, function)
       end
 
       @spec process(entity :: Entity.t(), changes :: Changes.t()) :: event_push()
       def process(entity, changes) do
-        fun = fn -> dispatch(entity, changes) end
-        do_process(function)
+        function = fn -> dispatch(entity, changes) end
+        do_process(entity, function)
       end
 
-      @spec do_process(dispatch_fun()) :: event_push()
-      def do_process(function) do
+      @spec do_process(Entity.t, dispatch_fun()) :: event_push()
+      def do_process(entity, function) do
         event =
           if Entity.match_aspect?(entity, aspect()) do
             {entity, function.()}
