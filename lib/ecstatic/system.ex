@@ -1,7 +1,10 @@
 defmodule Ecstatic.System do
   alias Ecstatic.{Aspect, Changes, Entity}
   @callback aspect() :: Aspect.t()
-  @callback dispatch(entity :: Entity.t()) :: Changes.t()
+  @doc "this is a test"
+  @callback dispatch(entity :: Entity.t(), optional_change) :: Changes.t()
+
+  @type optional_change :: Changes.t() | nil
 
   @doc false
   defmacro __using__(_options) do
@@ -28,7 +31,7 @@ defmodule Ecstatic.System do
         do_process(entity, function)
       end
 
-      @spec do_process(Entity.t, dispatch_fun()) :: event_push()
+      @spec do_process(Entity.t(), dispatch_fun()) :: event_push()
       def do_process(entity, function) do
         event =
           if Entity.match_aspect?(entity, aspect()) do

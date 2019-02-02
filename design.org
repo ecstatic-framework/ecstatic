@@ -2,27 +2,27 @@
 #+BEGIN_SRC elixir
   defmodule Dwarf do
     use Ecstatic.Entity
-    default_components [Age, Health.new(%{health: 20})]
+    @default_components [Age, Health.new(%{health: 20})]
   end
 
   defmodule Health do
     use Ecstatic.Component
-    default_state %{health: 10}
+    @default_state %{health: 10}
   end
 
   defmodule Poison do
     use Ecstatic.Component
-    default_state %{health_loss: 2}
+    @default_state %{health_loss: 2}
   end
 
   defmodule Age do
     use Ecstatic.Component
-    default_state %{age: 1}
+    @default_state %{age: 1}
   end
 
   defmodule AgingSpell do
     use Ecstatic.Component
-    default_state %{modifier: 1.2}
+    @default_state %{modifier: 1.2}
   end
 
   defmodule Poisoned do
@@ -41,10 +41,10 @@
   end
 
   defmodule Watchers do
-    use Ecstatic.Watchers
+    use Ecstatic.Watcher
 
     watch Poison do
-      run PoisonSystem, every: 6, :seconds
+      run PoisonSystem, every: :timer.seconds(6)
     end
 
     watch Health do

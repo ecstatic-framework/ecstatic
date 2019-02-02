@@ -38,7 +38,7 @@ defmodule Ecstatic.Mixfile do
 
   defp deps do
     [
-      {:ex_doc, ">= 0.0.0", only: :dev},
+      {:ex_doc, "~> 0.19", only: :dev, runtime: false},
       {:uuid, "~> 1.1"},
       {:gen_stage, "~> 0.12.2"},
       {:dialyxir, "~> 1.0-pre4", only: [:dev], runtime: false}

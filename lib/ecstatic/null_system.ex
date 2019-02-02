@@ -6,4 +6,8 @@ defmodule Ecstatic.NullSystem do
   def dispatch(_entity) do
     %Changes{}
   end
+
+  def dispatch(_entity, _changes) do
+    %Changes{}
+  end
 end
