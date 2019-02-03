@@ -42,17 +42,14 @@
 
   defmodule Watchers do
     use Ecstatic.Watcher
-
     watch Poison do
       run PoisonSystem, every: :timer.seconds(6)
     end
-
     watch Health do
       run PanicSystem, when: fn(pre, post) -> (pre.points - post.points) > 30 end
       run BleedingSystem, when: fn(_pre, post) -> post.points == 0 end
       run DeathSystem, when: fn(_pre, post) -> post.points == -10 end
     end
-
   end
 #+END_SRC
 * In words
