@@ -15,6 +15,10 @@ defmodule Ecstatic.Store.Ets do
     GenServer.call(__MODULE__, {:save_entity, entity})
   end
 
+  def delete_entity(id) do
+    GenServer.cast(__MODULE__, {:delete_entity, id})
+  end
+
   def get_entity(id) do
     [[entity]] = :ets.match(__MODULE__, {{:entity, id}, :"$1"})
     {:ok, entity}
@@ -23,5 +27,10 @@ defmodule Ecstatic.Store.Ets do
   def handle_call({:save_entity, entity}, _from, state) do
     :ets.insert(__MODULE__, {{:entity, entity.id}, entity})
     {:reply, {:ok, entity}, state}
+  end
+
+  def handle_cast({:delete_entity, id}, state) do
+    :ets.match_delete(__MODULE__, {{:entity, id}, :"$1"})
+    {:noreply, state}
   end
 end
