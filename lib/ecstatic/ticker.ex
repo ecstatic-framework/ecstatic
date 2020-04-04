@@ -46,11 +46,16 @@ defmodule Ecstatic.Ticker do
   end
 
   def handle_info({:start_tick, c_id, system, entity_id, [every: interval, for: ticks]}, state) do
-    send(self(), {:tick, c_id, system, interval})
-    new_state = state |>
-      update_ticks(c_id, ticks) |>
-      Map.put(:entity_id, entity_id)    
-    {:noreply, new_state}
+    case Map.get(state.ticks, c_id) do 
+      ^ticks -> {:noreply, state}
+      t when t < ticks -> {:noreply, state}
+      _ -> 
+        send(self(), {:tick, c_id, system, interval})
+        new_state = state |>
+          update_ticks(c_id, ticks) |>
+          Map.put(:entity_id, entity_id)    
+        {:noreply, new_state}
+    end
   end
 
   def handle_info({:stop_tick, c_id}, state) do
