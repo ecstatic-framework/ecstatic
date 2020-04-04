@@ -11,6 +11,7 @@ defmodule Ecstatic.Watcher do
   @doc false
   defmacro __before_compile__(env) do
     quote do
+      Module.put_attribute(__MODULE__, :current_component, nil)
       def watchers do
         unquote(Module.get_attribute(env.module, :watchers))
       end
@@ -25,6 +26,41 @@ defmodule Ecstatic.Watcher do
     end
   end
 
+
+  defguard is_tick(ticks) when (is_number(ticks) and ticks > 0) or ticks == :infinity
+  defguard is_interval(interval) when (is_number(interval) and interval > 0) or interval == :continuous
+
+  defp run_ticker(system, [every: interval, for: ticks] = ticker_opts) 
+    when is_tick(ticks) and is_interval(interval) do
+    attached = 
+      quote location: :keep do
+        component = Module.get_attribute(__MODULE__, :current_component)
+        %{
+          component: component,
+          component_lifecycle_hook: :attached,
+          system: unquote(system),
+          ticker: unquote(ticker_opts)
+        }
+      end
+
+    removed = 
+      quote location: :keep do 
+        component = Module.get_attribute(__MODULE__, :current_component)
+        %{
+          component: component,
+          component_lifecycle_hook: :removed,
+          system: unquote(system),
+          ticker: unquote(ticker_opts)
+        }
+      end
+
+    quote location: :keep, bind_quoted: [attached: attached, removed: removed] do
+      @watchers Macro.escape(attached)
+      @watchers Macro.escape(removed)
+    end
+  end
+
+  # reactive (event-driven) run macro
   defmacro run(system, when: predicate) do
     map =
       quote do
@@ -40,58 +76,11 @@ defmodule Ecstatic.Watcher do
       @watchers unquote(Macro.escape(map))
     end
   end
+
+  # ticker-based run macros
+  defmacro run(system, :continuous), do: run_ticker(system, [every: :continuous, for: :infinity])
+  defmacro run(system, [every: interval]), do: run_ticker(system, [every: interval, for: :infinity])
+  defmacro run(system, [every: interval, for: ticks]), do: run_ticker(system, [every: interval, for: ticks])
+
 end
 
-# defmacro run(system, every: milliseconds) do
-#   map =
-#     quote location: :keep do
-#       component = Module.get_attribute(__MODULE__, :current_component)
-
-#       if component == nil do
-#         raise "run/2 cannot be called outside a watch/2 macro code block"
-#       end
-
-#       start_tick = fn _e, c ->
-#         Process.send_after(
-#           self(),
-#           {:tick, c.id, unquote(system), unquote(milliseconds)},
-#           unquote(milliseconds)
-#         )
-
-#         true
-#       end
-
-#       %{
-#         component: component,
-#         component_lifecycle_hook: :attached,
-#         callback: start_tick,
-#         system: Ecstatic.NullSystem
-#       }
-#     end
-
-#   map2 =
-#     quote location: :keep do
-#       component = Module.get_attribute(__MODULE__, :current_component)
-
-#       if component == nil do
-#         raise "run/2 cannot be called outside a watch/2 macro code block"
-#       end
-
-#       stop_tick = fn _e, c ->
-#         Process.send_after(self(), {:stop_tick, c.id}, 20)
-#         true
-#       end
-
-#       %{
-#         component: component,
-#         component_lifecycle_hook: :removed,
-#         callback: stop_tick,
-#         system: Ecstatic.NullSystem
-#       }
-#     end
-
-#   quote location: :keep, bind_quoted: [map: map, map2: map2] do
-#     @watchers unquote(Macro.escape(map))
-#     @watchers unquote(Macro.escape(map2))
-#   end
-# end

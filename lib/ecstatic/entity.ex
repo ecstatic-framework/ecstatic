@@ -30,7 +30,12 @@ defmodule Ecstatic.Entity do
     quote location: :keep do
       @default_components @default_components || []
       def new(components \\ []) do
-        Ecstatic.Entity.new(components ++ @default_components)
+        #filter out any components passed in which are duplicates of default components
+        passed_comp_modules = Enum.reduce(components, %{}, fn(comp, acc) -> Map.put(acc, comp.type, false) end)
+        default_comps = Enum.filter(@default_components, fn(def_comp) -> 
+          Map.get(passed_comp_modules, def_comp, true)
+        end)
+        Ecstatic.Entity.new(components ++ default_comps)
       end
     end
   end

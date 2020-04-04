@@ -1,6 +1,7 @@
 defmodule Ecstatic.EventConsumer do
   @moduledoc false
   use GenStage
+  require Logger
 
   alias Ecstatic.Entity
 
@@ -9,10 +10,11 @@ defmodule Ecstatic.EventConsumer do
   end
 
   def init(entity) do
+    {:ok, ticker_pid} = Ecstatic.Ticker.start_link()
     state = %{
       watchers: Application.get_env(:ecstatic, :watchers).(),
       entity_id: entity.id,
-      ticks: %{}
+      ticker: ticker_pid
     }
 
     {:consumer, state,
@@ -30,8 +32,8 @@ defmodule Ecstatic.EventConsumer do
 
   # I can do [event] because I only ever ask for one.
   # event => {entity, %{changed: [], new: [], deleted: []}}
-  def handle_events([{entity, changes} = _event], _from, %{watchers: watchers} = state) do
-    IO.inspect(changes)
+  def handle_events([{entity, changes} = _event], _from, %{ticker: ticker_pid, watchers: watchers} = state) do
+    Logger.info(Kernel.inspect(changes, pretty: true))
     watcher_should_trigger = watcher_should_trigger?(entity, changes)
     change_contains_component = change_contains_component?(changes)
 
@@ -41,12 +43,17 @@ defmodule Ecstatic.EventConsumer do
       |> Enum.filter(watcher_should_trigger)
 
     new_entity = Entity.apply_changes(entity, changes)
-    # Ecstatic.Store.Ets.save_entity(new_entity)
 
     Enum.each(watchers_to_use, fn w ->
-      # TODO oh.. Does this mean I should create two types of systems
-      # instead of having one system with dispatch/1 and dispatch/2 ?
-      w.system.process(new_entity, changes)
+      case Map.get(w, :ticker, nil) do
+        nil ->
+          # TODO oh.. Does this mean I should create two types of systems
+          # instead of having one system with dispatch/1 and dispatch/2 ?
+          w.system.process(new_entity, changes)
+        opts when is_list(opts) ->
+          comp = Ecstatic.Entity.find_component(new_entity, w.component)
+          Kernel.send(ticker_pid, {:start_tick, comp.id, w.system, new_entity.id, opts})
+      end
     end)
 
     {:noreply, [], state}
@@ -63,49 +70,18 @@ defmodule Ecstatic.EventConsumer do
 
   def watcher_should_trigger?(entity, changes) do
     fn watcher ->
-      watcher.callback.(
-        entity,
-        Enum.find(
-          Map.get(changes, watcher.component_lifecycle_hook),
-          fn component -> watcher.component == component.type end
-        )
-      )
+      cond do 
+        Map.get(watcher, :ticker, nil) != nil -> true
+        Map.get(watcher, :callback, nil) != nil -> 
+          watcher.callback.(
+            entity,
+            Enum.find(
+              Map.get(changes, watcher.component_lifecycle_hook),
+              fn component -> watcher.component == component.type end
+            )
+          )
+      end
     end
   end
 
-  def handle_info({:tick, c_id, system, ms}, state) do
-    case Map.get(state.ticks, c_id, :no_tick) do
-      :no_tick ->
-        {:ok, entity} = Ecstatic.Store.Ets.get_entity(state.entity_id)
-        system.process(entity)
-
-        Process.send_after(
-          self(),
-          {:tick, c_id, system, ms},
-          ms
-        )
-
-        {:noreply, [], put_in(state, [:ticks, c_id], true)}
-
-      true ->
-        {:ok, entity} = Ecstatic.Store.Ets.get_entity(state.entity_id)
-        system.process(entity)
-
-        Process.send_after(
-          self(),
-          {:tick, c_id, system, ms},
-          ms
-        )
-
-        {:noreply, [], state}
-
-      false ->
-        ticks = Map.delete(state.ticks, c_id)
-        {:noreply, [], Map.put(state, :ticks, ticks)}
-    end
-  end
-
-  def handle_info({:stop_tick, c_id}, state) do
-    {:noreply, [], put_in(state, [:ticks, c_id], false)}
-  end
 end

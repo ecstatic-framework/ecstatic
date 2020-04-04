@@ -1,7 +1,6 @@
 defmodule Ecstatic.System do
   alias Ecstatic.{Aspect, Changes, Entity}
   @callback aspect() :: Aspect.t()
-  @doc "this is a test"
   @callback dispatch(entity :: Entity.t(), optional_change) :: Changes.t()
 
   @type optional_change :: Changes.t() | nil
