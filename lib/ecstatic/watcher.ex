@@ -32,31 +32,36 @@ defmodule Ecstatic.Watcher do
 
   defp run_ticker(system, [every: interval, for: ticks] = ticker_opts) 
     when is_tick(ticks) and is_interval(interval) do
-    attached = 
+
+    base = 
       quote location: :keep do
         component = Module.get_attribute(__MODULE__, :current_component)
         %{
           component: component,
-          component_lifecycle_hook: :attached,
           system: unquote(system),
           ticker: unquote(ticker_opts)
         }
       end
 
+    attached = 
+      quote location: :keep do
+        unquote(base) |> Map.put(:component_lifecycle_hook, :attached)
+      end
+
+    updated = 
+      quote location: :keep do
+        unquote(base) |> Map.put(:component_lifecycle_hook, :updated)
+      end
+  
     removed = 
-      quote location: :keep do 
-        component = Module.get_attribute(__MODULE__, :current_component)
-        %{
-          component: component,
-          component_lifecycle_hook: :removed,
-          system: unquote(system),
-          ticker: unquote(ticker_opts)
-        }
+      quote location: :keep do
+        unquote(base) |> Map.put(:component_lifecycle_hook, :removed)
       end
 
-    quote location: :keep, bind_quoted: [attached: attached, removed: removed] do
+    quote location: :keep, bind_quoted: [attached: attached, removed: removed, updated: updated] do
       @watchers Macro.escape(attached)
       @watchers Macro.escape(removed)
+      @watchers Macro.escape(updated)
     end
   end
 

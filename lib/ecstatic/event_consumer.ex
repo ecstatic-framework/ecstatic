@@ -52,7 +52,20 @@ defmodule Ecstatic.EventConsumer do
           w.system.process(new_entity, changes)
         opts when is_list(opts) ->
           comp = Ecstatic.Entity.find_component(new_entity, w.component)
-          Kernel.send(ticker_pid, {:start_tick, comp.id, w.system, new_entity.id, opts})
+          case w.component_lifecycle_hook do 
+            :updated ->
+              case opts[:every] do 
+                :continuous -> send(state.ticker, {:tick, comp.id, new_entity.id, w.system})
+                t when is_number(t) -> 
+                  Process.send_after(
+                    state.ticker, 
+                    {:tick, comp.id, new_entity.id, w.system}, 
+                    t
+                  )
+              end
+            :attached -> send(state.ticker, {:start_tick, comp.id, new_entity.id, w.system, opts})
+            :removed -> send(state.ticker, {:stop_tick, comp.id})
+          end
       end
     end)
 

@@ -1,7 +1,6 @@
 defmodule Ecstatic.Ticker do
   defstruct [
-    ticks: %{},
-    entity_id: nil
+    ticks: %{}
   ]
   use GenServer
 
@@ -19,25 +18,19 @@ defmodule Ecstatic.Ticker do
     Map.put(state, :ticks, new_ticks)
   end
   
-  def handle_info({:tick, c_id, system, interval} = tick_args, state) do
+  def handle_info({:tick, c_id, e_id, system}, state) do
     case Map.get(state.ticks, c_id, nil) do
       t_left 
         when t_left == :infinity 
         when (is_number(t_left) and t_left > 0) ->
 
-          {:ok, entity} = Ecstatic.Store.Ets.get_entity(state.entity_id)
+          {:ok, entity} = Ecstatic.Store.Ets.get_entity(e_id)
           system.process(entity)
-
-          case interval do 
-            ms when is_number(ms) -> Process.send_after(self(), tick_args, ms)
-            :continuous -> Kernel.send(self(), tick_args)
-          end
 
           case t_left do 
             :infinity -> {:noreply, state}
             _ -> {:noreply, update_ticks(state, c_id, (t_left - 1))}
           end
-
       0 ->
         {:noreply, update_ticks(state, c_id, :stopped)}
       :stopped -> 
@@ -45,17 +38,9 @@ defmodule Ecstatic.Ticker do
     end
   end
 
-  def handle_info({:start_tick, c_id, system, entity_id, [every: interval, for: ticks]}, state) do
-    case Map.get(state.ticks, c_id) do 
-      ^ticks -> {:noreply, state}
-      t when t < ticks -> {:noreply, state}
-      _ -> 
-        send(self(), {:tick, c_id, system, interval})
-        new_state = state |>
-          update_ticks(c_id, ticks) |>
-          Map.put(:entity_id, entity_id)    
-        {:noreply, new_state}
-    end
+  def handle_info({:start_tick, c_id, e_id, system, [every: _interval, for: ticks]}, state) do
+    send(self(), {:tick, c_id, e_id, system})
+    {:noreply, update_ticks(state, c_id, ticks)}
   end
 
   def handle_info({:stop_tick, c_id}, state) do
